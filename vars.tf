@@ -30,3 +30,13 @@ variable "tag_name" {
   description = "Name of the tag in route"
   default     = ""
 }
+
+variable "route_name" {
+  description = "Name of route"
+  default     = "webapp-route"
+}
+
+variable "next_hop_gateway" {
+  description = "Next Hop Gateway Value"
+  default = "default-internet-gateway"
+}
