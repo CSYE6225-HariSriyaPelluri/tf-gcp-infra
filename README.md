@@ -6,7 +6,12 @@ This Terraform project manages the infrastructure on Google Cloud Platform (GCP)
 
 - **Google Cloud Account**: Ensure you have access to a Google Cloud account.
 - **Terraform Installed**: You need Terraform v0.12+ installed on your machine. [Download Terraform](https://www.terraform.io/downloads.html)
-- **GCP Credentials**: Configure your GCP credentials as described in [Google Cloud documentation](https://cloud.google.com/docs/authentication/gcloud).
+- **GCP Credentials**: Run below commands to authenticate Google cloud credentials
+  ```bash
+  gcloud auth login
+  gcloud auth application-default login
+  gcloud config set project <project_id>
+  ```
 - **Enabling Compute Engine API**: Before deploying your infrastructure, make sure the Compute Engine API is enabled for your GCP project. This can be done through the GCP Console or using the gcloud CLI:
   ```bash
   gcloud services enable compute.googleapis.com
@@ -77,4 +82,8 @@ Follow the same steps we used for creating resources
 Creating resources in different workspaces ensures the old resources created in previous workspace are not destroyed
 
 ## Final Step
-After completion of project, remember to revoke google auth 
+After completion of project, remember to revoke google auth using below commands:
+```bash
+  gcloud auth revoke
+  gcloud auth application-default revoke
+```
