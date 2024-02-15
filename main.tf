@@ -23,10 +23,10 @@ resource "google_compute_subnetwork" "subnets" {
 }
 
 resource "google_compute_route" "webapp_route" {
-  name             = "webapp-route"
+  name             = var.route_name
   dest_range       = var.dest_cidr
   network          = google_compute_network.custom_vpc.id
-  next_hop_gateway = "default-internet-gateway"
+  next_hop_gateway = var.next_hop_gateway
   priority         = 1000
   tags             = [var.tag_name]
 
