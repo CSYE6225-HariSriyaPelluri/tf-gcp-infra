@@ -18,8 +18,8 @@ jobs:
       - name: 'Terraform Format'
         run: terraform fmt
       
-      - name: 'Terraform Validate'
-        run: terraform validate
-
       - name: 'Terraform Init'
         run: terraform init
+      
+      - name: 'Terraform Validate'
+        run: terraform validate
