@@ -7,3 +7,26 @@ variable "region" {
   default     = "us-east1"
 }
 
+variable "vpc_name" {
+  description = "The name of the VPC"
+  default     = "my-custom-vpc"
+}
+
+variable "dest_cidr" {
+  description = "CIDR route for webapp subnet"
+}
+
+variable "subnets" {
+  description = "List of subnets with their names, CIDR ranges and private ip google access state."
+  type = list(object({
+    name                     = string
+    cidr                     = string
+    private_ip_google_access = bool
+  }))
+  default = []
+}
+
+variable "tag_name" {
+  description = "Name of the tag in route"
+  default     = ""
+}
