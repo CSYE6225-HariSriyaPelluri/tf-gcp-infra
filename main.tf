@@ -30,5 +30,5 @@ resource "google_compute_route" "webapp_route" {
   priority         = 1000
   tags             = [var.tag_name]
 
-}
+
 
