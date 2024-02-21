@@ -4,10 +4,10 @@ provider "google" {
 }
 /* Reference: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network*/
 resource "google_compute_network" "custom_vpc" {
-  name                            = var.vpc_name
-  auto_create_subnetworks         = var.auto_create_subnetworks
-  delete_default_routes_on_create = var.delete_default_routes_on_create
-  routing_mode                    = var.routing_mode
+  name                            = var.vpc_details.vpc_name
+  auto_create_subnetworks         = var.vpc_details.auto_create_subnetworks
+  delete_default_routes_on_create = var.vpc_details.delete_default_routes_on_create
+  routing_mode                    = var.vpc_details.routing_mode
 }
 
 /* Reference: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_subnetwork*/
@@ -27,7 +27,7 @@ resource "google_compute_route" "webapp_route" {
   dest_range       = var.dest_cidr
   network          = google_compute_network.custom_vpc.id
   next_hop_gateway = var.next_hop_gateway
-  priority         = 1000
+  priority         = var.route_prioroty
   tags             = [var.tag_name]
 
 }
@@ -41,9 +41,23 @@ resource "google_compute_firewall" "firewall_custom_vpc" {
     ports    = [var.protocol.port]
   }
 
+  priority      = var.protocol.priority
   source_ranges = [var.firewall_src_range]
+  target_tags   = [var.tag_name]
 }
 
+resource "google_compute_firewall" "firewall_deny_ssh" {
+  name    = var.deny_all_firewall
+  network = google_compute_network.custom_vpc.id
+
+  deny {
+    protocol = "all"
+  }
+
+  priority      = var.allpriority
+  source_ranges = [var.firewall_src_range]
+
+}
 data "google_compute_image" "latest_image" {
   family      = var.image_family
   most_recent = var.instance_parameters.most_recent
@@ -63,7 +77,7 @@ resource "google_compute_instance" "custom_instance" {
     }
   }
 
-  tags = [var.instance_parameters.http_tag, var.tag_name]
+  tags = [var.tag_name]
 
   boot_disk {
     initialize_params {

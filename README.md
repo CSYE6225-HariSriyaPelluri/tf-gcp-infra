@@ -81,6 +81,46 @@ Follow the same steps we used for creating resources
     ```
 Creating resources in different workspaces ensures the old resources created in previous workspace are not destroyed
 
+## Assignment 4: Updated Resources
+
+### Firewall
+
+For this assignment, we have updated the Terraform template to include firewall rules:
+
+- Firewall rules are set up for our custom VPC/Subnet to allow traffic from the internet to the port our application listens to.
+- Traffic to deny all other is added using second firewall rule .
+
+### Compute Engine Instance (VM)
+
+We have also added a Compute Engine instance with the following specifications:
+
+- Boot disk Image: Custom Image (Created after successful web app repo workflow)
+- Boot disk type: Balanced
+- Size (GB): 100
+
+The instance is launched in the VPC created by our Terraform IaC code, ensuring it is not launched in the default VPC.
+The vars.tf file has the additional variables added for these new resources.
+
+### All resources in this config file
+- 1 Virtual Private Cloud (VPC)
+- 2 subnets namely "webapp" and "db"
+- 1 route for the created VPC
+- 1 compute instance launched in one of the subnets
+- 2 Firewall rules for VPC - one to allow http requests and one to deny all with respective priorities
+  
+## Usage
+
+To use the Terraform templates:
+
+1. Clone this repository to your local machine.
+2. Navigate to the directory containing the Terraform files.
+3. Provide all the required variables mentioned in vars.tf file.
+4. Run the steps mentioned above in create resources section
+
+## Notes
+
+Make sure you have the necessary permissions and credentials configured to interact with the Google Cloud Platform APIs.
+
 ## Final Step
 After completion of project, remember to revoke google auth using below commands:
 ```bash

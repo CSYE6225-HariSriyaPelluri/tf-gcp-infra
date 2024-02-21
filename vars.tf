@@ -7,13 +7,20 @@ variable "region" {
   default     = "us-east1"
 }
 
-variable "vpc_name" {
-  description = "The name of the VPC"
-  default     = "my-custom-vpc"
-}
-
-variable "dest_cidr" {
-  description = "CIDR route for webapp subnet"
+variable "vpc_details" {
+  description = "VPC fields"
+  type = object({
+    vpc_name                        = string
+    routing_mode                    = string
+    auto_create_subnetworks         = bool
+    delete_default_routes_on_create = bool
+  })
+  default = {
+    vpc_name                        = "my-custom-vpc"
+    routing_mode                    = "REGIONAL"
+    auto_create_subnetworks         = false
+    delete_default_routes_on_create = true
+  }
 }
 
 variable "subnets" {
@@ -26,6 +33,9 @@ variable "subnets" {
   default = []
 }
 
+variable "dest_cidr" {
+  description = "CIDR route for webapp subnet"
+}
 variable "tag_name" {
   description = "Name of the tag in route"
   default     = "tag"
@@ -36,19 +46,10 @@ variable "route_name" {
   default     = "webapp-route"
 }
 
-variable "routing_mode" {
-  description = "Specifying routing mode of network"
-  default     = "REGIONAL"
-}
-
-variable "auto_create_subnetworks" {
-  description = "Should subnetworks be auto created or not"
-  default     = false
-}
-
-variable "delete_default_routes_on_create" {
-  description = "Boolean to determine default routes should be created or not"
-  default     = true
+variable "route_prioroty" {
+  description = "Priority of webapp route"
+  type        = number
+  default     = 1000
 }
 variable "next_hop_gateway" {
   description = "Next Hop Gateway Value"
@@ -58,6 +59,17 @@ variable "next_hop_gateway" {
 variable "firewall_name" {
   description = "Firewall name for the custom VPC created"
   default     = "custom-firewall"
+}
+
+variable "deny_all_firewall" {
+  description = "Rule to deny ssh"
+  default     = "denyssh"
+}
+
+variable "allpriority" {
+  description = "Priority for all"
+  type        = number
+  default     = 65535
 }
 
 variable "image_family" {
@@ -71,7 +83,6 @@ variable "instance_parameters" {
     instance_name = string
     zone          = string
     machine_type  = string
-    http_tag      = string
     subnetname    = string
     size          = string
     type          = string
@@ -82,21 +93,18 @@ variable "instance_parameters" {
 variable "protocol" {
   description = "Protocols to use"
   type = object({
-    name = string
-    port = string
+    name     = string
+    port     = string
+    priority = number
   })
   default = {
-    name = "protocol"
-    port = "port number"
+    name     = "protocol"
+    port     = "port number"
+    priority = 0
   }
 }
 
 variable "firewall_src_range" {
   description = "Source range of firewalls"
   default     = "0.0.0.0/0"
-}
-
-variable "network_tier" {
-  description = "Network Tier"
-  default     = "PREMIUM"
 }
