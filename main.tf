@@ -5,9 +5,9 @@ provider "google" {
 /* Reference: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network*/
 resource "google_compute_network" "custom_vpc" {
   name                            = var.vpc_name
-  auto_create_subnetworks         = false
-  delete_default_routes_on_create = true
-  routing_mode                    = "REGIONAL"
+  auto_create_subnetworks         = var.auto_create_subnetworks
+  delete_default_routes_on_create = var.delete_default_routes_on_create
+  routing_mode                    = var.routing_mode
 }
 
 /* Reference: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_subnetwork*/
@@ -31,4 +31,48 @@ resource "google_compute_route" "webapp_route" {
   tags             = [var.tag_name]
 
 }
+
+resource "google_compute_firewall" "firewall_custom_vpc" {
+  name    = var.firewall_name
+  network = google_compute_network.custom_vpc.id
+
+  allow {
+    protocol = var.protocol.name
+    ports    = [var.protocol.port]
+  }
+
+  source_ranges = [var.firewall_src_range]
+}
+
+data "google_compute_image" "latest_image" {
+  family      = var.image_family
+  most_recent = var.instance_parameters.most_recent
+
+}
+
+resource "google_compute_instance" "custom_instance" {
+  name         = var.instance_parameters.instance_name
+  machine_type = var.instance_parameters.machine_type
+  zone         = var.instance_parameters.zone
+
+  network_interface {
+    network    = google_compute_network.custom_vpc.id
+    subnetwork = google_compute_subnetwork.subnets[var.instance_parameters.subnetname].id
+    access_config {
+      network_tier = var.instance_parameters.network_tier
+    }
+  }
+
+  tags = [var.instance_parameters.http_tag, var.tag_name]
+
+  boot_disk {
+    initialize_params {
+      image = data.google_compute_image.latest_image.self_link
+      size  = var.instance_parameters.size
+      type  = var.instance_parameters.type
+    }
+  }
+
+}
+
 
