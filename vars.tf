@@ -108,3 +108,54 @@ variable "firewall_src_range" {
   description = "Source range of firewalls"
   default     = "0.0.0.0/0"
 }
+
+
+variable "sql_instance_params" {
+  description = "Fields required to create SQL instance"
+
+  type = object({
+    private_ip_name              = string
+    name                         = string
+    address_type                 = string
+    address                      = string
+    sql_subnet                   = string
+    dbver                        = string
+    tier                         = string
+    availability_type            = string
+    disk_type                    = string
+    disk_size                    = number
+    backup_configuration_enabled = bool
+    backup_configuration_log     = bool
+    psc_enabled                  = bool
+    ipv4_enabled                 = bool
+    deletion_protection          = bool
+    db_name                      = string
+    sqlport                      = number
+    user                         = string
+    passwordlength               = number
+    specialchar                  = bool
+  })
+  default = {
+    private_ip_name              = "private-ip-address-psc"
+    name                         = "cloud-sql-instance-webapp"
+    address_type                 = "INTERNAL"
+    address                      = "10.0.2.3"
+    sql_subnet                   = "db5test"
+    dbver                        = "MYSQL_8_0"
+    tier                         = "db-f1-micro"
+    availability_type            = "REGIONAL"
+    disk_type                    = "pd-ssd"
+    disk_size                    = 100
+    backup_configuration_enabled = true
+    backup_configuration_log     = true
+    psc_enabled                  = true
+    ipv4_enabled                 = false
+    deletion_protection          = false
+    db_name                      = "webapp"
+    sqlport                      = 3306
+    user                         = "webapp"
+    passwordlength               = 16
+    specialchar                  = false
+  }
+
+}
