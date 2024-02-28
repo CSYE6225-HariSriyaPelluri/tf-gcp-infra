@@ -58,6 +58,75 @@ resource "google_compute_firewall" "firewall_deny_ssh" {
   source_ranges = [var.firewall_src_range]
 
 }
+
+# Private IP Address for SQL Instance
+resource "google_compute_address" "private_ip_address" {
+  name         = var.sql_instance_params.private_ip_name
+  region       = var.region
+  address_type = var.sql_instance_params.address_type
+  subnetwork   = resource.google_compute_subnetwork.subnets[var.sql_instance_params.sql_subnet].name
+  address      = var.sql_instance_params.address
+}
+
+# Cloud SQL MySQL Instance
+resource "google_sql_database_instance" "sql_instance" {
+  name             = var.sql_instance_params.name
+  region           = var.region
+  database_version = var.sql_instance_params.dbver
+  settings {
+    tier = var.sql_instance_params.tier
+
+    availability_type = var.sql_instance_params.availability_type
+
+    disk_type = var.sql_instance_params.disk_type
+    disk_size = var.sql_instance_params.disk_size
+
+    backup_configuration {
+      enabled            = var.sql_instance_params.backup_configuration_enabled
+      binary_log_enabled = var.sql_instance_params.backup_configuration_log
+    }
+    ip_configuration {
+      psc_config {
+        psc_enabled               = var.sql_instance_params.psc_enabled
+        allowed_consumer_projects = [var.project_id]
+      }
+      ipv4_enabled = var.sql_instance_params.ipv4_enabled
+    }
+  }
+
+  deletion_protection = var.sql_instance_params.deletion_protection
+}
+
+data "google_sql_database_instance" "default" {
+  name = google_sql_database_instance.sql_instance.name
+}
+
+resource "google_compute_forwarding_rule" "default" {
+  name                  = "psc-forwarding-rule-${google_sql_database_instance.sql_instance.name}"
+  region                = var.region
+  network               = google_compute_network.custom_vpc.self_link
+  ip_address            = google_compute_address.private_ip_address.self_link
+  load_balancing_scheme = ""
+  target                = data.google_sql_database_instance.default.psc_service_attachment_link
+}
+
+# Cloud SQL Database
+resource "google_sql_database" "webapp_database" {
+  name     = var.sql_instance_params.db_name
+  instance = google_sql_database_instance.sql_instance.name
+}
+
+resource "random_password" "pwd" {
+  length  = var.sql_instance_params.passwordlength
+  special = var.sql_instance_params.specialchar
+}
+
+resource "google_sql_user" "webapp_user" {
+  name     = var.sql_instance_params.user
+  instance = google_sql_database_instance.sql_instance.name
+  password = random_password.pwd.result
+}
+
 data "google_compute_image" "latest_image" {
   family      = var.image_family
   most_recent = var.instance_parameters.most_recent
@@ -87,6 +156,13 @@ resource "google_compute_instance" "custom_instance" {
     }
   }
 
+  metadata_startup_script = templatefile("${path.module}/startupscript.sh.tpl", {
+    hostname = google_compute_address.private_ip_address.address,
+    username = google_sql_user.webapp_user.name,
+    password = google_sql_user.webapp_user.password,
+    db       = google_sql_database.webapp_database.name,
+    port     = var.protocol.port
+  })
+
+
 }
-
-
