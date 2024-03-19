@@ -171,30 +171,30 @@ variable "service_account_display_name" {
 }
 
 variable "roles" {
-  type = list(string)
+  type    = list(string)
   default = ["roles/logging.admin", "roles/monitoring.metricWriter"]
 }
 
-variable "zone_name"{
-  type = string
+variable "zone_name" {
+  type    = string
   default = "webapp"
 }
 
 variable "sa_scope" {
-  type = string
+  type    = string
   default = "cloud-platform"
 }
 
-variable "record_details"{
+variable "record_details" {
   type = object({
     name = string
-    type= string
-    ttl=number
+    type = string
+    ttl  = number
   })
 
   default = {
     name = "harisriya.me."
     type = "A",
-    ttl=300
+    ttl  = 300
   }
 }
