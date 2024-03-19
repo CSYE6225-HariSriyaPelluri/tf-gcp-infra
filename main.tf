@@ -133,6 +133,34 @@ data "google_compute_image" "latest_image" {
 
 }
 
+# Service account for VM
+resource "google_service_account" "default" {
+  account_id   = var.service_account_id
+  display_name = var.service_account_display_name
+}
+
+data "google_service_account" "vm_service_account" {
+  account_id = var.service_account_id
+  depends_on = [google_service_account.default]
+}
+
+# IAM Bindings
+resource "google_project_iam_binding" "iam_binding" {
+  for_each = { for role in var.roles : role => role }
+
+  project = var.project_id
+  role    = each.value
+
+  members = [
+    "serviceAccount:${data.google_service_account.vm_service_account.email}"
+  ]
+}
+
+# Use the existing Cloud DNS zone named "webapp"
+data "google_dns_managed_zone" "existing_zone" {
+  name = var.zone_name
+}
+
 resource "google_compute_instance" "custom_instance" {
   name         = var.instance_parameters.instance_name
   machine_type = var.instance_parameters.machine_type
@@ -147,6 +175,8 @@ resource "google_compute_instance" "custom_instance" {
   }
 
   tags = [var.tag_name]
+
+  depends_on = [ google_service_account.default ]
 
   boot_disk {
     initialize_params {
@@ -164,5 +194,17 @@ resource "google_compute_instance" "custom_instance" {
     port     = var.protocol.port
   })
 
+  service_account {
+    email  = google_service_account.default.email
+    scopes = [var.sa_scope]
+  }
 
+}
+
+resource "google_dns_record_set" "domain_record" {
+  name    = var.record_details.name
+  managed_zone = data.google_dns_managed_zone.existing_zone.name
+  type    = var.record_details.type
+  ttl     = var.record_details.ttl
+  rrdatas = [google_compute_instance.custom_instance.network_interface[0].access_config[0].nat_ip]
 }

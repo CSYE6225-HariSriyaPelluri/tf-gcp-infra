@@ -159,3 +159,42 @@ variable "sql_instance_params" {
   }
 
 }
+
+variable "service_account_id" {
+  type    = string
+  default = "vm-sa-logging"
+}
+
+variable "service_account_display_name" {
+  type    = string
+  default = "Custom SA for VM Instance"
+}
+
+variable "roles" {
+  type = list(string)
+  default = ["roles/logging.admin", "roles/monitoring.metricWriter"]
+}
+
+variable "zone_name"{
+  type = string
+  default = "webapp"
+}
+
+variable "sa_scope" {
+  type = string
+  default = "cloud-platform"
+}
+
+variable "record_details"{
+  type = object({
+    name = string
+    type= string
+    ttl=number
+  })
+
+  default = {
+    name = "harisriya.me."
+    type = "A",
+    ttl=300
+  }
+}
