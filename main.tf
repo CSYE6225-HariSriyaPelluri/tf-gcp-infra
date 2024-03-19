@@ -176,7 +176,7 @@ resource "google_compute_instance" "custom_instance" {
 
   tags = [var.tag_name]
 
-  depends_on = [ google_service_account.default ]
+  depends_on = [google_service_account.default]
 
   boot_disk {
     initialize_params {
@@ -202,9 +202,9 @@ resource "google_compute_instance" "custom_instance" {
 }
 
 resource "google_dns_record_set" "domain_record" {
-  name    = var.record_details.name
+  name         = var.record_details.name
   managed_zone = data.google_dns_managed_zone.existing_zone.name
-  type    = var.record_details.type
-  ttl     = var.record_details.ttl
-  rrdatas = [google_compute_instance.custom_instance.network_interface[0].access_config[0].nat_ip]
+  type         = var.record_details.type
+  ttl          = var.record_details.ttl
+  rrdatas      = [google_compute_instance.custom_instance.network_interface[0].access_config[0].nat_ip]
 }
