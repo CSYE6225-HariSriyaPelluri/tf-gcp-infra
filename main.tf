@@ -1,6 +1,16 @@
-provider "google" {
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = ">= 4.34.0"
+      
+    }
+  }
+}
+
+provider "google"{
   project = var.project_id
-  region  = var.region
+  region = var.region
 }
 /* Reference: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network*/
 resource "google_compute_network" "custom_vpc" {
@@ -207,4 +217,105 @@ resource "google_dns_record_set" "domain_record" {
   type         = var.record_details.type
   ttl          = var.record_details.ttl
   rrdatas      = [google_compute_instance.custom_instance.network_interface[0].access_config[0].nat_ip]
+}
+
+
+// Pub/Sub Topic
+resource "google_pubsub_topic" "verify_email_topic" {
+  name = var.pub_sub_params.topic_name
+}
+
+// Pub/Sub Subscription
+resource "google_pubsub_subscription" "verify_email_subscription" {
+  name  = var.pub_sub_params.subscription_name
+  topic = google_pubsub_topic.verify_email_topic.name
+  ack_deadline_seconds = 10
+}
+
+resource "random_id" "default" {
+  byte_length = 8
+}
+# Create a Cloud Storage bucket
+resource "google_storage_bucket" "cf_bucket" {
+  name     = "${random_id.default.hex}-gcf-source"
+  project = var.project_id
+  location = var.region
+  uniform_bucket_level_access = var.bucket_params.uniform_bucket_level_access
+}
+
+data "archive_file" "default" {
+  type        = "zip"
+  output_path = var.bucket_params.file_op_path
+  source_dir  = var.bucket_params.file_src_path
+}
+# Upload zip file to Cloud Storage
+resource "google_storage_bucket_object" "function_zip" {
+  name   = var.bucket_params.obj_name
+  content_type = var.bucket_params.content_type
+  bucket = google_storage_bucket.cf_bucket.name
+  source = data.archive_file.default.output_path
+  depends_on = [ google_storage_bucket.cf_bucket ]
+}
+
+# Cloud Function Service Account
+resource "google_service_account" "cf_service_account" {
+  account_id   = var.cloud_fn_params.sa_acc_name
+  display_name = var.cloud_fn_params.sa_display_name
+}
+
+# Grant roles to the Cloud Function Service Account
+resource "google_project_iam_member" "pubsub_invoker" {
+  project = var.project_id
+  role   = var.cloud_fn_params.sa_role
+  member = "serviceAccount:${google_service_account.cf_service_account.email}"
+}
+
+resource "google_vpc_access_connector" "cloud_function_vpc_connector" {
+  name          = var.cloud_fn_params.vpc_acc_connect_name
+  region        = var.region                         
+  network       = google_compute_network.custom_vpc.name
+  ip_cidr_range = var.cloud_fn_params.vpc_acc_connect_cidr
+}
+
+
+# Cloud Function
+resource "google_cloudfunctions2_function" "verify_email_function" {
+  name        = var.cloud_fn_params.name
+  location = var.region
+  description = var.cloud_fn_params.description
+  build_config {
+    runtime     = var.cloud_fn_params.runtime
+    entry_point = var.cloud_fn_params.entry_point
+    source {
+      storage_source {
+        bucket = google_storage_bucket.cf_bucket.name
+        object = google_storage_bucket_object.function_zip.name
+      }
+    }
+    
+  }
+
+  service_config {
+    vpc_connector         = google_vpc_access_connector.cloud_function_vpc_connector.name
+    environment_variables = {
+      MAILGUN_API_KEY = var.MAILGUN_API_KEY,
+      DOMAIN = var.DOMAIN,
+      hostname = google_compute_address.private_ip_address.address,
+      username = google_sql_user.webapp_user.name,
+      password = google_sql_user.webapp_user.password,
+    }
+
+    service_account_email = google_service_account.cf_service_account.email
+  }
+  project     = var.project_id
+  
+  event_trigger {
+    trigger_region = var.region
+    event_type     = var.cloud_fn_params.event_type
+    pubsub_topic   = google_pubsub_topic.verify_email_topic.id
+    retry_policy = var.cloud_fn_params.retry_policy
+  }
+
+  
+  depends_on = [ google_storage_bucket.cf_bucket ]
 }
