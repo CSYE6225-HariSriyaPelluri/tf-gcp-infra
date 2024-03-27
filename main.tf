@@ -328,6 +328,7 @@ resource "google_cloudfunctions2_function" "verify_email_function" {
       hostname = google_compute_address.private_ip_address.address,
       username = google_sql_user.webapp_user.name,
       password = google_sql_user.webapp_user.password,
+      db       = google_sql_database.webapp_database.name
     }
 
     service_account_email = google_service_account.cf_service_account.email
