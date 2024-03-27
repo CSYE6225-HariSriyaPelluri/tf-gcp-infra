@@ -266,7 +266,7 @@ variable "cloud_fn_params" {
     retry_policy = "RETRY_POLICY_RETRY"
     sa_acc_name = "cloud-function-service-account"
     sa_display_name = "Cloud Function Service Account"
-    sa_role = "roles/cloudfunctions.invoker"
+    sa_role = "roles/run.invoker"
     vpc_acc_connect_name = "cloudconnector"
     vpc_acc_connect_cidr = "10.10.0.0/28"
   }
