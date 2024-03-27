@@ -172,7 +172,7 @@ variable "service_account_display_name" {
 
 variable "roles" {
   type    = list(string)
-  default = ["roles/logging.admin", "roles/monitoring.metricWriter"]
+  default = ["roles/logging.admin", "roles/monitoring.metricWriter","roles/pubsub.publisher"]
 }
 
 variable "zone_name" {
@@ -197,4 +197,74 @@ variable "record_details" {
     type = "A",
     ttl  = 300
   }
+}
+
+variable "pub_sub_params" {
+  type = object({
+    topic_name = string
+    subscription_name = string
+  })
+
+  default = {
+    topic_name = "verify_email"
+    subscription_name = "verify_email_subscription"
+  }
+}
+
+variable "bucket_params" {
+  type = object({
+    obj_name = string
+    content_type = string
+    file_op_path= string
+    file_src_path = string
+    uniform_bucket_level_access = bool
+  })
+
+  default = {
+    obj_name = "cloudfunctioncode"
+    content_type = "application/zip"
+    file_op_path = "/tmp/function-source.zip"
+    file_src_path = "../serverless_dev/"
+    uniform_bucket_level_access = true
+
+  }
+}
+
+variable "cloud_fn_params" {
+  type = object({
+    name = string
+    description=string
+    runtime=string
+    entry_point=string
+    event_type=string
+    retry_policy=string
+    sa_acc_name=string
+    sa_display_name=string
+    sa_role=string
+    vpc_acc_connect_name=string
+    vpc_acc_connect_cidr=string
+  })
+
+  default = {
+    name = "verify-email"
+    description = "Cloud Function to send verification email to users"
+    runtime = "nodejs18"
+    entry_point = "helloPubSub"
+    event_type = "google.cloud.pubsub.topic.v1.messagePublished"
+    retry_policy = "RETRY_POLICY_RETRY"
+    sa_acc_name = "cloud-function-service-account"
+    sa_display_name = "Cloud Function Service Account"
+    sa_role = "roles/cloudfunctions.invoker"
+    vpc_acc_connect_name = "cloudconnector"
+    vpc_acc_connect_cidr = "10.10.0.0/28"
+  }
+  
+}
+
+variable "MAILGUN_API_KEY" {
+  type = string
+}
+
+variable "DOMAIN" {
+  type = string
 }
