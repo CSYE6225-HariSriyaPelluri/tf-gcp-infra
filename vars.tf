@@ -257,6 +257,7 @@ variable "cloud_fn_params" {
     sa_role=string
     vpc_acc_connect_name=string
     vpc_acc_connect_cidr=string
+    sql_role=string
   })
 
   default = {
@@ -271,6 +272,7 @@ variable "cloud_fn_params" {
     sa_role = "roles/run.invoker"
     vpc_acc_connect_name = "cloudconnector"
     vpc_acc_connect_cidr = "10.10.0.0/28"
+    sql_role = "roles/cloudsql.client"
   }
   
 }

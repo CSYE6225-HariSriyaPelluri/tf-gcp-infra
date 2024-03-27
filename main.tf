@@ -296,6 +296,12 @@ resource "google_project_iam_member" "pubsub_invoker" {
   member = "serviceAccount:${google_service_account.cf_service_account.email}"
 }
 
+
+resource "google_project_iam_member" "sql_client" {
+  project = var.project_id
+  role   = var.cloud_fn_params.sql_role
+  member = "serviceAccount:${google_service_account.cf_service_account.email}"
+}
 resource "google_vpc_access_connector" "cloud_function_vpc_connector" {
   name          = var.cloud_fn_params.vpc_acc_connect_name
   region        = var.region                         
