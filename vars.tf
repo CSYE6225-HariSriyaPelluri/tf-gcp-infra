@@ -209,6 +209,7 @@ variable "pub_sub_params" {
     sub_sa_display_name=string
     topic_role=string
     sub_role=string
+    message_retention_duration = string
   })
 
   default = {
@@ -220,6 +221,7 @@ variable "pub_sub_params" {
     sub_sa_display_name="Subscriber for cloud Function"
     topic_role = "roles/viewer"
     sub_role = "roles/editor"
+    message_retention_duration = "604800s"
   }
 }
 

@@ -235,6 +235,7 @@ resource "google_project_iam_member" "topic_viewer" {
 // Pub/Sub Topic
 resource "google_pubsub_topic" "verify_email_topic" {
   name = var.pub_sub_params.topic_name
+  message_retention_duration = var.pub_sub_params.message_retention_duration
 }
 
 # Subscription Service Account
