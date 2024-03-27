@@ -339,6 +339,7 @@ resource "google_cloudfunctions2_function" "verify_email_function" {
     trigger_region = var.region
     event_type     = var.cloud_fn_params.event_type
     pubsub_topic   = google_pubsub_topic.verify_email_topic.id
+    service_account_email = google_service_account.cf_service_account.email
     retry_policy = var.cloud_fn_params.retry_policy
   }
 
