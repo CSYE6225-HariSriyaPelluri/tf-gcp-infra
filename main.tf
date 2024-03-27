@@ -219,10 +219,35 @@ resource "google_dns_record_set" "domain_record" {
   rrdatas      = [google_compute_instance.custom_instance.network_interface[0].access_config[0].nat_ip]
 }
 
+# Topic Service Account
+resource "google_service_account" "topic_service_account" {
+  account_id   = var.pub_sub_params.sa_name
+  display_name = var.pub_sub_params.sa_display_name
+}
+
+# Grant roles to the Topic Service Account
+resource "google_project_iam_member" "topic_viewer" {
+  project = var.project_id
+  role   = var.pub_sub_params.topic_role
+  member = "serviceAccount:${google_service_account.topic_service_account.email}"
+}
 
 // Pub/Sub Topic
 resource "google_pubsub_topic" "verify_email_topic" {
   name = var.pub_sub_params.topic_name
+}
+
+# Subscription Service Account
+resource "google_service_account" "sub_service_account" {
+  account_id   = var.pub_sub_params.sub_sa_name
+  display_name = var.pub_sub_params.sub_sa_display_name
+}
+
+# Grant roles to the Subscription Service Account
+resource "google_project_iam_member" "sub_editor" {
+  project = var.project_id
+  role   = var.pub_sub_params.sub_role
+  member = "serviceAccount:${google_service_account.sub_service_account.email}"
 }
 
 // Pub/Sub Subscription

@@ -203,11 +203,23 @@ variable "pub_sub_params" {
   type = object({
     topic_name = string
     subscription_name = string
+    sa_name=string
+    sa_display_name=string
+    sub_sa_name=string
+    sub_sa_display_name=string
+    topic_role=string
+    sub_role=string
   })
 
   default = {
     topic_name = "verify_email"
     subscription_name = "verify_email_subscription"
+    sa_name = "topic-for-cf"
+    sa_display_name="Topic for cloud function"
+    sub_sa_name="subscriber-for-cf"
+    sub_sa_display_name="Subscriber for cloud Function"
+    topic_role = "roles/viewer"
+    sub_role = "roles/editor"
   }
 }
 
