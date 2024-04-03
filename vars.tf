@@ -79,14 +79,19 @@ variable "image_family" {
 variable "instance_parameters" {
   description = "Fields for instance"
   type = object({
-    most_recent   = bool
-    instance_name = string
-    zone          = string
-    machine_type  = string
-    subnetname    = string
-    size          = string
-    type          = string
-    network_tier  = string
+    most_recent         = bool
+    instance_name       = string
+    zone                = string
+    machine_type        = string
+    subnetname          = string
+    size                = string
+    type                = string
+    network_tier        = string
+    automatic_restart   = bool
+    min_node_cpus       = number
+    on_host_maintenance = string
+    preemptible         = bool
+    provisioning_model  = string
   })
 }
 
@@ -172,7 +177,7 @@ variable "service_account_display_name" {
 
 variable "roles" {
   type    = list(string)
-  default = ["roles/logging.admin", "roles/monitoring.metricWriter","roles/pubsub.publisher"]
+  default = ["roles/logging.admin", "roles/monitoring.metricWriter", "roles/pubsub.publisher"]
 }
 
 variable "zone_name" {
@@ -201,44 +206,44 @@ variable "record_details" {
 
 variable "pub_sub_params" {
   type = object({
-    topic_name = string
-    subscription_name = string
-    sa_name=string
-    sa_display_name=string
-    sub_sa_name=string
-    sub_sa_display_name=string
-    topic_role=string
-    sub_role=string
+    topic_name                 = string
+    subscription_name          = string
+    sa_name                    = string
+    sa_display_name            = string
+    sub_sa_name                = string
+    sub_sa_display_name        = string
+    topic_role                 = string
+    sub_role                   = string
     message_retention_duration = string
   })
 
   default = {
-    topic_name = "verify_email"
-    subscription_name = "verify_email_subscription"
-    sa_name = "topic-for-cf"
-    sa_display_name="Topic for cloud function"
-    sub_sa_name="subscriber-for-cf"
-    sub_sa_display_name="Subscriber for cloud Function"
-    topic_role = "roles/viewer"
-    sub_role = "roles/editor"
+    topic_name                 = "verify_email"
+    subscription_name          = "verify_email_subscription"
+    sa_name                    = "topic-for-cf"
+    sa_display_name            = "Topic for cloud function"
+    sub_sa_name                = "subscriber-for-cf"
+    sub_sa_display_name        = "Subscriber for cloud Function"
+    topic_role                 = "roles/viewer"
+    sub_role                   = "roles/editor"
     message_retention_duration = "604800s"
   }
 }
 
 variable "bucket_params" {
   type = object({
-    obj_name = string
-    content_type = string
-    file_op_path= string
-    file_src_path = string
+    obj_name                    = string
+    content_type                = string
+    file_op_path                = string
+    file_src_path               = string
     uniform_bucket_level_access = bool
   })
 
   default = {
-    obj_name = "cloudfunctioncode"
-    content_type = "application/zip"
-    file_op_path = "/tmp/function-source.zip"
-    file_src_path = "../serverless_dev/"
+    obj_name                    = "cloudfunctioncode"
+    content_type                = "application/zip"
+    file_op_path                = "/tmp/function-source.zip"
+    file_src_path               = "../serverless_dev/"
     uniform_bucket_level_access = true
 
   }
@@ -246,35 +251,35 @@ variable "bucket_params" {
 
 variable "cloud_fn_params" {
   type = object({
-    name = string
-    description=string
-    runtime=string
-    entry_point=string
-    event_type=string
-    retry_policy=string
-    sa_acc_name=string
-    sa_display_name=string
-    sa_role=string
-    vpc_acc_connect_name=string
-    vpc_acc_connect_cidr=string
-    sql_role=string
+    name                 = string
+    description          = string
+    runtime              = string
+    entry_point          = string
+    event_type           = string
+    retry_policy         = string
+    sa_acc_name          = string
+    sa_display_name      = string
+    sa_role              = string
+    vpc_acc_connect_name = string
+    vpc_acc_connect_cidr = string
+    sql_role             = string
   })
 
   default = {
-    name = "verify-email"
-    description = "Cloud Function to send verification email to users"
-    runtime = "nodejs18"
-    entry_point = "helloPubSub"
-    event_type = "google.cloud.pubsub.topic.v1.messagePublished"
-    retry_policy = "RETRY_POLICY_RETRY"
-    sa_acc_name = "cloud-function-service-account"
-    sa_display_name = "Cloud Function Service Account"
-    sa_role = "roles/run.invoker"
+    name                 = "verify-email"
+    description          = "Cloud Function to send verification email to users"
+    runtime              = "nodejs18"
+    entry_point          = "helloPubSub"
+    event_type           = "google.cloud.pubsub.topic.v1.messagePublished"
+    retry_policy         = "RETRY_POLICY_RETRY"
+    sa_acc_name          = "cloud-function-service-account"
+    sa_display_name      = "Cloud Function Service Account"
+    sa_role              = "roles/run.invoker"
     vpc_acc_connect_name = "cloudconnector"
     vpc_acc_connect_cidr = "10.10.0.0/28"
-    sql_role = "roles/cloudsql.client"
+    sql_role             = "roles/cloudsql.client"
   }
-  
+
 }
 
 variable "MAILGUN_API_KEY" {
@@ -283,4 +288,150 @@ variable "MAILGUN_API_KEY" {
 
 variable "DOMAIN" {
   type = string
+}
+
+variable "backend_service_params" {
+  type = object({
+    name            = string
+    port_name       = string
+    protocol        = string
+    enable_cdn      = bool
+    balancing_mode  = string
+    capacity_scaler = number
+  })
+  default = {
+    name            = "backend-service"
+    port_name       = "my-port"
+    protocol        = "HTTP"
+    enable_cdn      = true
+    balancing_mode  = "UTILIZATION"
+    capacity_scaler = 1.0
+  }
+}
+
+variable "health_check_firewall_params" {
+  type = object({
+    name          = string
+    source_ranges = list(string)
+  })
+  default = {
+    name          = "allow-health-check"
+    source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
+  }
+}
+
+variable "target_proxy_name" {
+  type    = string
+  default = "lb-https-proxy"
+}
+
+variable "ssl_name" {
+  type    = string
+  default = "value"
+}
+
+variable "url_name" {
+  type    = string
+  default = "l7-xlb-url-map"
+}
+
+variable "auto_scaler_params" {
+  type = object({
+    name                   = string
+    max_replicas           = number
+    min_replicas           = number
+    cooldown_period        = number
+    cpu_utilization_target = number
+  })
+  default = {
+    name                   = "my-region-autoscaler"
+    max_replicas           = 6
+    min_replicas           = 3
+    cooldown_period        = 60
+    cpu_utilization_target = 0.05
+  }
+}
+
+variable "health_check" {
+  type = object({
+    name                = string
+    description         = string
+    timeout_sec         = number
+    check_interval_sec  = number
+    healthy_threshold   = number
+    unhealthy_threshold = number
+    request_path        = string
+    port                = number
+  })
+  default = {
+    name                = "https-health-check"
+    description         = "Health check via https"
+    timeout_sec         = 1
+    check_interval_sec  = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 10
+    request_path        = "/healthz"
+    port                = 8080
+  }
+}
+
+variable "instance_group_manager_params" {
+  type = object({
+    name               = string
+    base_instance_name = string
+    dis_zone           = string
+    port_name          = string
+    port               = number
+    target_size        = number
+    initial_delay_sec  = number
+  })
+  default = {
+    name               = "appserver-igm"
+    base_instance_name = "app"
+    dis_zone           = "us-east1-c"
+    port_name          = "my-port"
+    port               = 8080
+    target_size        = 2
+    initial_delay_sec  = 300
+  }
+}
+
+variable "load_balancer_params" {
+  type = object({
+    global_add_name      = string
+    ip_version           = string
+    address_type         = string
+    port_range           = string
+    forwarding_rule_name = string
+  })
+  default = {
+    global_add_name      = "global-lb-address"
+    ip_version           = "IPV4"
+    address_type         = "EXTERNAL"
+    port_range           = "443"
+    forwarding_rule_name = "lb-https-rule"
+  }
+}
+
+variable "ssl_domain" {
+  type    = string
+  default = "harisriya.me."
+}
+
+variable "forwarding_rule_lb_service_account" {
+  type = object({
+    sa_acc_name     = string
+    sa_display_name = string
+  })
+  default = {
+    sa_acc_name     = "lb-service-account"
+    sa_display_name = "Service account for forwarding rule for load balancer"
+  }
+
+
+}
+
+variable "forwarding_rule_roles" {
+  type    = list(string)
+  default = ["roles/compute.targetHttpsProxiesUser", "roles/compute.sslCertificateViewer", "roles/compute.networkUser"]
 }
