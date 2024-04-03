@@ -287,10 +287,6 @@ resource "google_compute_firewall" "allow_health_checks" {
   target_tags = [var.tag_name]
 }
 
-resource "google_service_account" "forwarding_rule_lb_service_account" {
-  account_id   = var.forwarding_rule_lb_service_account.sa_acc_name
-  display_name = var.forwarding_rule_lb_service_account.sa_display_name
-}
 resource "google_compute_global_address" "lb_ip_address" {
   name         = var.load_balancer_params.global_add_name
   ip_version   = var.load_balancer_params.ip_version

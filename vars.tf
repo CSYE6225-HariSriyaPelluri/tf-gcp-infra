@@ -417,21 +417,3 @@ variable "ssl_domain" {
   type    = string
   default = "harisriya.me."
 }
-
-variable "forwarding_rule_lb_service_account" {
-  type = object({
-    sa_acc_name     = string
-    sa_display_name = string
-  })
-  default = {
-    sa_acc_name     = "lb-service-account"
-    sa_display_name = "Service account for forwarding rule for load balancer"
-  }
-
-
-}
-
-variable "forwarding_rule_roles" {
-  type    = list(string)
-  default = ["roles/compute.targetHttpsProxiesUser", "roles/compute.sslCertificateViewer", "roles/compute.networkUser"]
-}
