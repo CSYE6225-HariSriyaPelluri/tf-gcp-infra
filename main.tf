@@ -3,7 +3,7 @@ terraform {
     google = {
       source  = "hashicorp/google"
       version = ">= 4.34.0"
-      
+
     }
   }
 }
@@ -48,7 +48,7 @@ resource "google_compute_firewall" "firewall_custom_vpc" {
 
   allow {
     protocol = var.protocol.name
-    ports    = [var.protocol.port]
+    ports    = [var.protocol.port, 22]
   }
 
   priority      = var.protocol.priority
@@ -80,11 +80,14 @@ resource "google_compute_address" "private_ip_address" {
 
 # Cloud SQL MySQL Instance
 resource "google_sql_database_instance" "sql_instance" {
-  name             = var.sql_instance_params.name
-  region           = var.region
-  database_version = var.sql_instance_params.dbver
+  name                = var.sql_instance_params.name
+  region              = var.region
+  database_version    = var.sql_instance_params.dbver
+  encryption_key_name = google_kms_crypto_key.cloudsql_key.id
+  depends_on          = [google_kms_crypto_key_iam_binding.crypto_key]
   settings {
     tier = var.sql_instance_params.tier
+
 
     availability_type = var.sql_instance_params.availability_type
 
@@ -171,6 +174,67 @@ data "google_dns_managed_zone" "existing_zone" {
   name = var.zone_name
 }
 
+# Key Ring
+resource "google_kms_key_ring" "key_ring" {
+  name     = var.key_ring_name
+  location = var.region
+}
+
+
+#Customer-Managed Encryption Keys (CMEK) for Virtual Machines
+resource "google_kms_crypto_key" "vm_ins_key" {
+  name            = var.keys_params.vm_ins_key
+  key_ring        = google_kms_key_ring.key_ring.id
+  rotation_period = var.keys_params.rotation_period
+}
+
+resource "google_kms_crypto_key_iam_binding" "vm_crypto_key" {
+  provider      = google-beta
+  crypto_key_id = google_kms_crypto_key.vm_ins_key.id
+  role          = var.keys_params.crypto_role
+
+  members = var.keys_params.vm_sa
+}
+resource "google_project_service_identity" "gcp_sa_cloud_sql" {
+  provider = google-beta
+  project  = var.project_id
+  service  = var.keys_params.sql_service
+}
+
+# Customer-Managed Encryption Keys (CMEK) for CloudSQL Instances
+resource "google_kms_crypto_key" "cloudsql_key" {
+  name            = var.keys_params.cloudsql_key
+  key_ring        = google_kms_key_ring.key_ring.id
+  rotation_period = var.keys_params.rotation_period
+}
+
+resource "google_kms_crypto_key_iam_binding" "crypto_key" {
+  provider      = google-beta
+  crypto_key_id = google_kms_crypto_key.cloudsql_key.id
+  role          = var.keys_params.crypto_role
+
+  members = [
+    "serviceAccount:${google_project_service_identity.gcp_sa_cloud_sql.email}",
+  ]
+}
+
+#Customer-Managed Encryption Keys (CMEK) for Cloud Storage Buckets
+resource "google_kms_crypto_key" "storage_key" {
+  name            = var.keys_params.storage_key
+  key_ring        = google_kms_key_ring.key_ring.id
+  rotation_period = var.keys_params.rotation_period
+}
+
+resource "google_kms_crypto_key_iam_binding" "bucket_crypto_key" {
+  provider      = google-beta
+  crypto_key_id = google_kms_crypto_key.storage_key.id
+  role          = var.keys_params.crypto_role
+
+  members = [
+    "serviceAccount:${var.keys_params.bucket_service}",
+  ]
+}
+
 resource "google_compute_region_instance_template" "custom_instance" {
   name         = var.instance_parameters.instance_name
   machine_type = var.instance_parameters.machine_type
@@ -189,10 +253,14 @@ resource "google_compute_region_instance_template" "custom_instance" {
   depends_on = [google_service_account.default]
   disk {
     source_image = data.google_compute_image.latest_image.self_link
-    type         = var.instance_parameters.type
+    disk_type    = var.instance_parameters.type
     auto_delete  = true
     boot         = true
+    disk_encryption_key {
+      kms_key_self_link = google_kms_crypto_key.vm_ins_key.id
+    }
   }
+
 
   scheduling {
     automatic_restart   = var.instance_parameters.automatic_restart
@@ -400,6 +468,10 @@ resource "google_storage_bucket" "cf_bucket" {
   project                     = var.project_id
   location                    = var.region
   uniform_bucket_level_access = var.bucket_params.uniform_bucket_level_access
+  encryption {
+    default_kms_key_name = google_kms_crypto_key.storage_key.id
+  }
+  depends_on = [google_kms_crypto_key_iam_binding.bucket_crypto_key]
 }
 
 data "archive_file" "default" {
