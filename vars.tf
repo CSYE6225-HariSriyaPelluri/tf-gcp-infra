@@ -417,3 +417,22 @@ variable "ssl_domain" {
   type    = string
   default = "harisriya.me."
 }
+
+variable "key_ring_name" {
+  type    = string
+  default = "test-one-ring"
+}
+
+variable "keys_params" {
+  type = object({
+    vm_ins_key      = string
+    rotation_period = string
+    crypto_role     = string
+    cloudsql_key    = string
+    storage_key     = string
+    bucket_service  = string
+    sql_service     = string
+    vm_sa           = list(string)
+  })
+}
+
